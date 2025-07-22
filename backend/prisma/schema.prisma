@@ -1,0 +1,85 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  phone     String
+  password  String
+  role      String   @default("CLIENT") // ADMIN ou CLIENT
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  bookings Booking[]
+
+  @@map("users")
+}
+
+model Service {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  price       Float
+  duration    Int // em minutos
+  category    String   // MANICURE, PEDICURE, ESMALTACAO, DECORACAO
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  bookings Booking[]
+
+  @@map("services")
+}
+
+model Booking {
+  id           String   @id @default(cuid())
+  clientId     String
+  serviceId    String
+  date         String // formato YYYY-MM-DD
+  time         String // formato HH:MM
+  status       String  @default("PENDING") // PENDING, CONFIRMED, COMPLETED, CANCELLED
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  createdBy    String   @default("CLIENT") // <--- ADICIONE ESTA LINHA
+
+  // Relacionamentos
+  client  User    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@map("bookings")
+}
+
+model WorkingHour {
+  id        String   @id @default(cuid())
+  weekday   Int      // 0 = Domingo, 1 = Segunda, ..., 6 = Sábado
+  startTime String   // formato HH:MM
+  endTime   String   // formato HH:MM
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("working_hours")
+}
+
+model SpecialDay {
+  id        String   @id @default(cuid())
+  date      String   // formato YYYY-MM-DD
+  startTime String   // formato HH:MM
+  endTime   String   // formato HH:MM
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("special_days")
+} 
