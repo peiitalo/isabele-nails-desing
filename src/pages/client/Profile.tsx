@@ -114,7 +114,7 @@ export default function Profile() {
                     booking.status === 'completed' ? 'bg-blue-100 text-blue-800' :
                     booking.status === 'cancelled' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
                   }`}>{booking.status}</span>
-                  {(booking.status === 'pending' || booking.status === 'confirmed') && (
+                  {booking.status === 'pending' && (
                     <button
                       className="btn-outline text-xs"
                       onClick={() => { setCancelId(booking.id); setShowCancelModal(true); }}

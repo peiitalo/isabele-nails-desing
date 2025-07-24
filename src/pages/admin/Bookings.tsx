@@ -457,10 +457,8 @@ export default function AdminBookings() {
               <button
                 className="btn-primary"
                 onClick={async () => {
-                  // Atualiza status para cancelled e salva o motivo no campo notes
-                  await apiService.updateBookingStatus(rejectId, 'cancelled');
-                  // Atualiza o campo notes do agendamento
-                  await apiService.updateBookingNotes(rejectId, rejectReason);
+                  // Atualiza status para cancelled e salva o motivo no campo notes em uma única chamada
+                  await apiService.updateBookingStatus(rejectId, { status: 'CANCELLED', notes: rejectReason });
                   setShowRejectModal(false);
                   setRejectReason('');
                   // Atualizar lista de bookings

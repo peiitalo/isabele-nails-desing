@@ -138,16 +138,7 @@ export default async function serviceRoutes(fastify, options) {
     try {
       const { id } = request.params
 
-      // Verificar se há agendamentos para este serviço
-      const bookings = await prisma.booking.findMany({
-        where: { serviceId: id }
-      })
-
-      if (bookings.length > 0) {
-        return reply.status(400).send({
-          error: 'Não é possível deletar um serviço que possui agendamentos'
-        })
-      }
+      // Permite deletar serviço mesmo que possua agendamentos
 
       await prisma.service.delete({
         where: { id }

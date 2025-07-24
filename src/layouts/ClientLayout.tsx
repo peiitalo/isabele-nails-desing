@@ -17,10 +17,10 @@ export default function ClientLayout() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gray-50 flex flex-col px-2 sm:px-4 md:px-8 lg:px-16">
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               {/* Menu mobile */}
@@ -49,7 +49,7 @@ export default function ClientLayout() {
 
       {/* Navegação Desktop */}
       <nav className="bg-white shadow-sm border-b border-gray-200 hidden lg:block">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
           <div className="flex space-x-8">
             {navigation.map((item) => {
               const isActive = location.pathname === item.href

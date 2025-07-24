@@ -247,11 +247,14 @@ export default async function bookingRoutes(fastify, options) {
   }, async (request, reply) => {
     try {
       const { id } = request.params
-      const { status } = request.body
+      const { status, notes } = request.body
 
       const booking = await prisma.booking.update({
         where: { id },
-        data: { status },
+        data: {
+          status,
+          ...(status === 'CANCELLED' && notes ? { notes } : {})
+        },
         include: {
           client: {
             select: {
@@ -336,17 +339,13 @@ export default async function bookingRoutes(fastify, options) {
       }
 
       // Verificar permissão
-      if (user.role === 'CLIENT' && booking.clientId !== user.id) {
-        return reply.status(403).send({
-          error: 'Acesso negado'
-        })
-      }
-
-      // Só pode cancelar agendamentos pendentes ou confirmados
-      if (!['PENDING', 'CONFIRMED'].includes(booking.status)) {
-        return reply.status(400).send({
-          error: 'Não é possível cancelar este agendamento'
-        })
+      if (user.role === 'CLIENT') {
+        if (booking.clientId !== user.id) {
+          return reply.status(403).send({ error: 'Acesso negado' })
+        }
+        if (booking.status !== 'PENDING') {
+          return reply.status(403).send({ error: 'Só é possível cancelar agendamentos pendentes.' })
+        }
       }
 
       await prisma.booking.update({

@@ -6,22 +6,32 @@ import authRoutes from './routes/auth.js'
 import serviceRoutes from './routes/services.js'
 import bookingRoutes from './routes/bookings.js'
 import userRoutes from './routes/users.js'
+import cookie from '@fastify/cookie'
+
 
 const fastify = Fastify({
   logger: true,
   bodyLimit: 1048576
 })
 
+await fastify.register(cookie)
+
 // Registrar plugins
 await fastify.register(cors, {
   origin: [
     'http://localhost:3000', 
   ],
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH']
 })
 
 // Configurar para processar JSON
 fastify.addContentTypeParser(/^application\/json(;.*)?$/, { parseAs: 'string' }, function (req, body, done) {
+  if (!body || body.trim() === '') {
+    // Permite corpo vazio para DELETE, etc
+    done(null, undefined)
+    return
+  }
   try {
     const json = JSON.parse(body)
     done(null, json)

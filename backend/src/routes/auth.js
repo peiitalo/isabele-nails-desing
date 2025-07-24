@@ -4,11 +4,6 @@ import prisma from '../database/client.js'
 export default async function authRoutes(fastify, options) {
   // Login
   fastify.post('/login', async (request, reply) => {
-    console.log('🔍 Login request recebido')
-    console.log('📥 Headers:', request.headers)
-    console.log('📥 Body:', request.body)
-    console.log('📥 Body type:', typeof request.body)
-    
     try {
       const { email, password } = request.body
 
@@ -40,12 +35,21 @@ export default async function authRoutes(fastify, options) {
 
       // Retornar dados do usuário (sem senha) e token
       const { password: _, ...userWithoutPassword } = user
-      
+
+      // Enviar token como cookie HTTPOnly
+      reply.setCookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 60 * 60 * 24 // 1 dia
+      })
+
       reply.send({
-        user: userWithoutPassword,
-        token
+        user: userWithoutPassword
       })
     } catch (error) {
+      console.error('Erro no login:', error)
       reply.status(500).send({
         error: 'Erro interno do servidor'
       })
@@ -62,7 +66,11 @@ export default async function authRoutes(fastify, options) {
           name: { type: 'string', minLength: 1 },
           email: { type: 'string', format: 'email' },
           phone: { type: 'string', minLength: 1 },
-          password: { type: 'string', minLength: 6 }
+          password: {
+            type: 'string',
+            minLength: 8,
+            pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-={}:;<>.,?]).{8,}$'
+          }
         }
       }
     }
@@ -102,12 +110,19 @@ export default async function authRoutes(fastify, options) {
         role: user.role
       })
 
-      // Retornar dados do usuário (sem senha) e token
+      // Enviar token como cookie HTTPOnly
+      reply.setCookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 60 * 60 * 24 // 1 dia
+      })
+
+      // Retornar dados do usuário (sem senha)
       const { password: _, ...userWithoutPassword } = user
-      
       reply.status(201).send({
-        user: userWithoutPassword,
-        token
+        user: userWithoutPassword
       })
     } catch (error) {
       reply.status(500).send({

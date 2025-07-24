@@ -28,20 +28,20 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-secondary-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white rounded-lg shadow-lg p-6 sm:p-8 mx-2">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-secondary-50 py-8 px-2 sm:py-12 sm:px-4 md:px-8 lg:px-16">
+      <div className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-md space-y-8 bg-white bg-opacity-80 rounded-xl shadow-lg p-4 sm:p-8">
         <div>
           <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-primary-100">
             <Sparkles className="h-6 w-6 text-primary-600" />
           </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-4 text-center text-2xl sm:text-3xl font-extrabold text-gray-900">
             Cadastro de Cliente
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          <p className="mt-2 text-center text-xs sm:text-sm text-gray-600">
             Crie sua conta para agendar serviços
           </p>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <form className="mt-6 sm:mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
               <label htmlFor="name" className="sr-only">Nome</label>
@@ -50,7 +50,7 @@ export default function Register() {
                 name="name"
                 type="text"
                 required
-                className="input rounded-t-lg w-full text-base py-3 px-3 bg-white text-gray-900 placeholder-gray-400 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="input w-full text-sm sm:text-base rounded-t-lg rounded-b-none py-3 px-3 bg-white text-gray-900 placeholder-gray-400 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholder="Nome completo"
                 value={name}
                 onChange={e => setName(e.target.value)}
@@ -89,9 +89,9 @@ export default function Register() {
                 name="password"
                 type={showPassword ? 'text' : 'password'}
                 required
-                className="input rounded-b-lg pr-10 w-full text-base py-3 px-3 bg-white text-gray-900 placeholder-gray-400 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="Senha (mínimo 6 caracteres)"
-                minLength={6}
+                className="input rounded-b-lg pr-10 w-full text-sm sm:text-base py-3 px-3 bg-white text-gray-900 placeholder-gray-400 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="Senha (mínimo 8 caracteres, letra maiúscula, minúscula, número e símbolo)"
+                minLength={8}
                 value={password}
                 onChange={e => setPassword(e.target.value)}
               />

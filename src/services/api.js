@@ -13,22 +13,17 @@ class ApiService {
     console.log('📤 Dados enviados:', options.body)
     console.log('📤 Método:', options.method || 'GET')
     
-    // Adicionar token de autenticação se existir
-    const token = localStorage.getItem('token')
-    if (token) {
-      options.headers = {
-        ...options.headers,
-        'Authorization': `Bearer ${token}`
-      }
-    }
 
     // Configurações padrão
+    let headers = { ...options.headers };
+    // Só adiciona Content-Type se houver body
+    if (options.body) {
+      headers['Content-Type'] = 'application/json';
+    }
     const config = {
       method: options.method || 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-      },
+      headers,
+      credentials: 'include',
       ...options
     }
 
@@ -128,6 +123,13 @@ class ApiService {
   }
 
   async updateBookingStatus(id, status) {
+    if (typeof status === 'object') {
+      // Permite enviar { status, notes }
+      return this.request(`/bookings/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify(status)
+      })
+    }
     return this.request(`/bookings/${id}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status })

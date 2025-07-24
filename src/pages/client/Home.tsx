@@ -1,13 +1,27 @@
 import { useAuth } from '../../contexts/AuthContext'
-import { Calendar, Clock, MapPin, Phone, Star } from 'lucide-react'
-import { mockServices } from '../../data/mockData'
+import { Calendar, Clock, MapPin, Phone } from 'lucide-react'
+import apiService from '../../services/api'
 import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Service } from '../../types'
 
 export default function Home() {
   const { user } = useAuth()
   const navigate = useNavigate()
 
-  const featuredServices = mockServices.slice(0, 3)
+  const [featuredServices, setFeaturedServices] = useState<Service[]>([])
+
+  useEffect(() => {
+    async function fetchServices() {
+      try {
+        const data = await apiService.getServices()
+        setFeaturedServices(data.slice(0, 3))
+      } catch (e) {
+        // erro silencioso
+      }
+    }
+    fetchServices()
+  }, [])
 
   return (
     <div className="space-y-8">
@@ -21,13 +35,10 @@ export default function Home() {
             Transforme suas unhas com nossos serviços profissionais de manicure e pedicure.
           </p>
           <div className="flex items-center space-x-6 text-sm">
-            <div className="flex items-center space-x-2">
-              <Star className="h-5 w-5" />
-              <span>4.9 (150+ avaliações)</span>
-            </div>
+            
             <div className="flex items-center space-x-2">
               <MapPin className="h-5 w-5" />
-              <span>São Paulo, SP</span>
+              <span>Ipaguaçu Mirim, CE</span>
             </div>
           </div>
         </div>

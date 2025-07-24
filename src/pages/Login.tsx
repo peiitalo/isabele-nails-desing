@@ -50,13 +50,13 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-secondary-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white rounded-lg shadow-lg p-6 sm:p-8 mx-2">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-secondary-50 py-8 px-2 sm:py-12 sm:px-4 md:px-8 lg:px-16">
+      <div className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-md space-y-8 bg-white bg-opacity-80 rounded-xl shadow-lg p-4 sm:p-8">
         <div>
           <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-primary-100">
             <Sparkles className="h-6 w-6 text-primary-600" />
           </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-4 text-center text-2xl sm:text-3xl font-extrabold text-gray-900">
             Isa Nails Design
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
@@ -122,15 +122,6 @@ export default function Login() {
           </div>
 
           <div className="text-center">
-            <p className="text-sm text-gray-600">
-              <strong>Credenciais de teste:</strong>
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              Admin: admin@isa.com / admin123
-            </p>
-            <p className="text-xs text-gray-500">
-              Cliente: cliente@teste.com / cliente123
-            </p>
             <p className="text-sm text-gray-600 mt-4">
               Não tem conta? <a href="/register" className="text-primary-600 hover:underline">Cadastre-se</a>
             </p>

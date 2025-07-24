@@ -12,10 +12,10 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-2 sm:px-4 md:px-8 lg:px-16">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando...</p>
+          <p className="text-xs sm:text-sm text-gray-600">Carregando...</p>
         </div>
       </div>
     )

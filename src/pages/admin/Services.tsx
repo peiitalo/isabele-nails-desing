@@ -337,12 +337,12 @@ export default function AdminServices() {
                   <select
                     className="input"
                     value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value as Service['category'] })}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   >
-                    <option value="manicure">Manicure</option>
-                    <option value="pedicure">Pedicure</option>
-                    <option value="esmaltação">Esmaltação</option>
-                    <option value="decoração">Decoração</option>
+                    <option value="MANICURE">Manicure</option>
+                    <option value="PEDICURE">Pedicure</option>
+                    <option value="ESMALTACAO">Esmaltação</option>
+                    <option value="DECORACAO">Decoração</option>
                   </select>
                 </div>
 
