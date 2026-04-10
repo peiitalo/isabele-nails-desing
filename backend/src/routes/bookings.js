@@ -418,7 +418,7 @@ export default async function bookingRoutes(fastify, options) {
       if (special.length > 0) {
         workingHours = special.map(s => ({ startTime: s.startTime, endTime: s.endTime }))
       } else {
-        const weekday = new Date(date).getDay();
+        const weekday = new Date(date + 'T00:00:00').getDay();
         workingHours = await prisma.workingHour.findMany({ where: { weekday }, orderBy: [{ startTime: 'asc' }] })
       }
       // Gerar slots
@@ -560,6 +560,49 @@ export default async function bookingRoutes(fastify, options) {
       reply.status(204).send()
     } catch (error) {
       reply.status(500).send({ error: 'Erro ao deletar horário' })
+    }
+  })
+
+  // Endpoint para registrar pagamento (apenas admin)
+  fastify.patch('/:id/payment', {
+    preHandler: [fastify.adminAuth],
+    schema: {
+      body: {
+        type: 'object',
+        required: ['paymentStatus'],
+        properties: {
+          paymentStatus: { type: 'string', enum: ['PAID', 'UNPAID'] },
+          paymentMethod: { type: 'string', enum: ['PIX', 'CASH', 'CARD'] }
+        }
+      }
+    }
+  }, async (request, reply) => {
+    try {
+      const { id } = request.params
+      const { paymentStatus, paymentMethod } = request.body
+
+      const booking = await prisma.booking.update({
+        where: { id },
+        data: {
+          paymentStatus,
+          ...(paymentMethod ? { paymentMethod } : {})
+        },
+        include: {
+          client: {
+            select: { id: true, name: true, email: true, phone: true }
+          },
+          service: {
+            select: { id: true, name: true, price: true, duration: true }
+          }
+        }
+      })
+
+      reply.send(booking)
+    } catch (error) {
+      if (error.code === 'P2025') {
+        return reply.status(404).send({ error: 'Agendamento não encontrado' })
+      }
+      reply.status(500).send({ error: 'Erro interno do servidor' })
     }
   })
 } 

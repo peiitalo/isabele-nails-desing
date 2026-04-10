@@ -44,16 +44,18 @@ model Service {
 }
 
 model Booking {
-  id           String   @id @default(cuid())
-  clientId     String
-  serviceId    String
-  date         String // formato YYYY-MM-DD
-  time         String // formato HH:MM
-  status       String  @default("PENDING") // PENDING, CONFIRMED, COMPLETED, CANCELLED
-  notes        String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  createdBy    String   @default("CLIENT") // <--- ADICIONE ESTA LINHA
+  id              String   @id @default(cuid())
+  clientId        String
+  serviceId       String
+  date            String // formato YYYY-MM-DD
+  time            String // formato HH:MM
+  status          String  @default("PENDING") // PENDING, CONFIRMED, COMPLETED, CANCELLED
+  paymentStatus   String  @default("UNPAID") // UNPAID, PAID
+  paymentMethod   String? // PIX, CASH, CARD
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  createdBy       String  @default("CLIENT")
 
   // Relacionamentos
   client  User    @relation(fields: [clientId], references: [id], onDelete: Cascade)
