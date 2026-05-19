@@ -288,8 +288,7 @@ export default async function userRoutes(fastify, options) {
         totalUsers,
         totalClients,
         totalAdmins,
-        activeClients,
-        totalRevenue
+        activeClients
       ] = await Promise.all([
         prisma.user.count(),
         prisma.user.count({ where: { role: 'CLIENT' } }),
@@ -306,26 +305,21 @@ export default async function userRoutes(fastify, options) {
             }
           }
         }),
-        prisma.booking.aggregate({
-          _sum: {
-            service: {
-              select: {
-                price: true
-              }
-            }
-          },
-          where: {
-            status: 'COMPLETED'
-          }
-        })
       ])
+      const completedBookings = await prisma.booking.findMany({
+        where: { status: 'COMPLETED' },
+        include: { service: { select: { price: true } } }
+      })
+      const totalRevenue = completedBookings.reduce(
+        (sum, b) => sum + (b.service?.price || 0), 0
+      )
 
       reply.send({
         totalUsers,
         totalClients,
         totalAdmins,
         activeClients,
-        totalRevenue: totalRevenue._sum.service?.price || 0
+        totalRevenue
       })
     } catch (error) {
       reply.status(500).send({

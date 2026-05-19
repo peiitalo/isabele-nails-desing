@@ -1,5 +1,3 @@
-import jwt from '@fastify/jwt'
-
 export async function authMiddleware(request, reply) {
   try {
     // Se não houver Authorization, tenta pegar do cookie
@@ -8,7 +6,7 @@ export async function authMiddleware(request, reply) {
     }
     await request.jwtVerify();
   } catch (err) {
-    reply.send(err);
+    return reply.send(err);
   }
 }
 
@@ -25,6 +23,6 @@ export async function adminMiddleware(request, reply) {
       });
     }
   } catch (err) {
-    reply.send(err);
+    return reply.send(err);
   }
 } 

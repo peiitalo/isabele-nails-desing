@@ -1,202 +1,164 @@
-# 🚀 Guia de Configuração - Isa Nails Design
+# Isa Nails Design - Sistema Completo
 
-Este guia te ajudará a configurar e rodar o sistema completo Isa Nails Design.
+Sistema completo de agendamento para salão de manicure com frontend React + Vite e backend Fastify + Prisma.
 
-## 📋 Pré-requisitos
+## 🚀 Funcionalidades
 
-- Node.js 18+ instalado
-- npm ou yarn instalado
-- Git instalado
+### Para Clientes:
+- **Página Inicial**: Apresentação dos serviços e informações do salão
+- **Catálogo de Serviços**: Visualização de todos os serviços disponíveis com filtros
+- **Sistema de Agendamento**: Interface intuitiva para agendar horários
+- **Perfil do Cliente**: Gerenciamento de informações pessoais e histórico de agendamentos
 
-## 🛠️ Configuração Passo a Passo
+### Para Administradores:
+- **Dashboard**: Visão geral com estatísticas do negócio
+- **Gerenciamento de Agendamentos**: Controle completo dos horários marcados
+- **Gestão de Serviços**: Cadastro, edição e remoção de serviços
+- **Base de Clientes**: Visualização e gerenciamento da carteira de clientes
 
-### 1. Clone o Repositório
-
-```bash
-git clone [url-do-repositorio]
-cd isa-nails-design
-```
-
-### 2. Configurar o Backend
-
-```bash
-# Navegar para a pasta do backend
-cd backend
-
-# Instalar dependências
-npm install
-
-# Gerar cliente Prisma
-npm run db:generate
-
-# Criar tabelas no banco de dados
-npm run db:push
-
-# Popular banco com dados iniciais
-npm run db:seed
-```
-
-### 3. Iniciar o Backend
-
-```bash
-# Em desenvolvimento (com hot reload)
-npm run dev
-
-# OU em produção
-npm start
-```
-
-O backend estará rodando em `http://localhost:3333`
-
-### 4. Configurar o Frontend
-
-```bash
-# Voltar para a pasta raiz
-cd ..
-
-# Instalar dependências do frontend
-npm install
-```
-
-### 5. Iniciar o Frontend
-
-```bash
-# Em uma nova aba/terminal
-npm run dev
-```
-
-O frontend estará rodando em `http://localhost:3000`
-
-## 🔐 Credenciais de Teste
-
-### Administrador
-- **Email:** admin@isa.com
-- **Senha:** admin123
-
-### Cliente
-- **Email:** cliente@teste.com
-- **Senha:** cliente123
-
-## 📊 Dados Iniciais
-
-O sistema já vem com:
-
-- **1 administrador** (Isabela)
-- **1 cliente** (Maria Silva)
-- **6 serviços** de exemplo
-- **2 agendamentos** de exemplo
-
-## 🔧 Comandos Úteis
-
-### Backend
-
-```bash
-cd backend
-
-# Desenvolvimento
-npm run dev
-
-# Produção
-npm start
-
-# Gerar cliente Prisma
-npm run db:generate
-
-# Sincronizar banco
-npm run db:push
-
-# Popular dados
-npm run db:seed
-
-# Abrir Prisma Studio (visualizar banco)
-npm run db:studio
-```
+## 🛠️ Tecnologias Utilizadas
 
 ### Frontend
+- **React 18** - Biblioteca JavaScript para interfaces
+- **TypeScript** - Tipagem estática para JavaScript
+- **Vite** - Build tool e dev server
+- **React Router DOM** - Roteamento da aplicação
+- **Tailwind CSS** - Framework CSS utilitário
+- **Lucide React** - Ícones modernos
+- **React Hook Form** - Gerenciamento de formulários
+- **React Hot Toast** - Notificações toast
+- **Date-fns** - Manipulação de datas
 
-```bash
-# Desenvolvimento
-npm run dev
+### Backend
+- **Fastify** - Framework web rápido e eficiente
+- **Prisma** - ORM moderno para Node.js
+- **SQLite** - Banco de dados leve e rápido
+- **JWT** - Autenticação baseada em tokens
+- **bcryptjs** - Criptografia de senhas
+- **CORS** - Cross-Origin Resource Sharing
 
-# Build de produção
-npm run build
+## 📁 Estrutura do Projeto
 
-# Preview do build
-npm run preview
-
-# Linter
-npm run lint
 ```
-
-## 🗄️ Banco de Dados
-
-- **Tipo:** SQLite
-- **Arquivo:** `backend/prisma/dev.db`
-- **ORM:** Prisma
-- **Interface:** Prisma Studio (`npm run db:studio`)
+├── frontend                    # Frontend
+│   ├── src/
+│   │   ├── components/         # Componentes reutilizáveis
+│   │   ├── contexts/           # Contextos React (AuthContext)
+│   │   ├── layouts/            # Layouts das páginas
+│   │   ├── pages/              # Páginas da aplicação
+│   │   │   ├── admin/          # Páginas do administrador
+│   │   │   └── client/         # Páginas do cliente
+│   │   ├── services/           # Serviços de API
+│   │   ├── types/              # Definições TypeScript
+│   │   ├── App.tsx             # Componente principal
+│   │   └── main.tsx            # Ponto de entrada
+├── backend/                    # Backend
+│   ├── prisma/                 # Schema e banco de dados
+│   ├── src/
+│   │   ├── database/           # Cliente Prisma e seed
+│   │   ├── middleware/         # Middlewares de autenticação
+│   │   ├── routes/             # Rotas da API
+│   │   └── server.js           # Servidor principal
+│   └── package.json
+└── README.md                   # Guia de configuração
+```
 
 ## 🔌 API Endpoints
 
-### Base URL: `http://localhost:3333/api`
+Base URL: `http://localhost:3333/api`
 
-- **Auth:** `/auth/*`
-- **Services:** `/services/*`
-- **Bookings:** `/bookings/*`
-- **Users:** `/users/*`
+### Autenticação
+- `POST /api/auth/login` - Login
+- `POST /api/auth/register` - Registro
+- `GET /api/auth/me` - Dados do usuário atual
 
-## 🐛 Solução de Problemas
+### Serviços
+- `GET /api/services` - Listar serviços
+- `GET /api/services/:id` - Buscar serviço por ID
+- `POST /api/services` - Criar serviço (admin)
+- `PUT /api/services/:id` - Atualizar serviço (admin)
+- `DELETE /api/services/:id` - Deletar serviço (admin)
+- `GET /api/services/stats/overview` - Estatísticas (admin)
 
-### Backend não inicia
-1. Verifique se Node.js 18+ está instalado
-2. Verifique se todas as dependências foram instaladas
-3. Verifique se o banco foi configurado corretamente
+### Agendamentos
+- `GET /api/bookings` - Listar agendamentos
+- `GET /api/bookings/:id` - Buscar agendamento por ID
+- `POST /api/bookings` - Criar agendamento
+- `PATCH /api/bookings/:id/status` - Atualizar status (admin)
+- `DELETE /api/bookings/:id` - Cancelar agendamento
+- `GET /api/bookings/availability/:date` - Horários disponíveis
+- `PATCH /api/bookings/:id/payment` - Registrar pagamento (admin)
+- `GET /api/bookings/stats/dashboard` - Dashboard (admin)
+- `GET/POST/PUT/DELETE /api/bookings/working-hours` - Horários de trabalho (admin)
+- `GET/POST/PUT/DELETE /api/bookings/special-days` - Dias especiais (admin)
 
-### Frontend não conecta ao backend
-1. Verifique se o backend está rodando na porta 3333
-2. Verifique se o CORS está configurado corretamente
-3. Verifique o console do navegador para erros
+### Usuários
+- `GET /api/users` - Listar usuários (admin)
+- `GET /api/users/:id` - Buscar usuário por ID
+- `PUT /api/users/:id` - Atualizar usuário
+- `PATCH /api/users/:id/password` - Alterar senha
+- `DELETE /api/users/:id` - Deletar usuário (admin)
+- `GET /api/users/stats/overview` - Estatísticas (admin)
 
-### Erro de autenticação
-1. Verifique se o banco foi populado com `npm run db:seed`
-2. Use as credenciais de teste fornecidas
-3. Verifique se o token está sendo salvo no localStorage
+## 🗄️ Banco de Dados
 
-### Erro de banco de dados
-1. Delete o arquivo `backend/prisma/dev.db`
-2. Execute `npm run db:push` novamente
-3. Execute `npm run db:seed` para popular dados
+O sistema usa **SQLite** com **Prisma ORM**. O banco é criado automaticamente e populado com dados de exemplo via `npm run db:seed`.
 
-## 📱 Testando o Sistema
+### Tabelas
+- **Users** - Usuários com roles ADMIN e CLIENT
+- **Services** - Serviços oferecidos (nome, preço, duração, categoria)
+- **Bookings** - Agendamentos (status, pagamento, notas)
+- **WorkingHours** - Horários de funcionamento por dia da semana
+- **SpecialDays** - Horários especiais para feriados/datas específicas
 
-1. **Acesse:** `http://localhost:3000`
-2. **Faça login** com as credenciais de teste
-3. **Teste as funcionalidades:**
-   - Como cliente: agendar serviços, ver histórico
-   - Como admin: gerenciar agendamentos, serviços, clientes
-
-## 🚀 Deploy
-
-### Backend
+### Interface
+Use Prisma Studio para visualizar e editar dados visualmente:
 ```bash
-cd backend
-npm start
+cd backend && npm run db:studio
 ```
+
+## 🎨 Design System
+
+- **Cores Primárias**: Rosa (#ec4899) e Azul (#0ea5e9)
+- **Tipografia**: Inter (sistema)
+- **Componentes**: Cards, botões, inputs padronizados
+- **Responsividade**: Design mobile-first
+
+## 🔧 Scripts Disponíveis
 
 ### Frontend
-```bash
-npm run build
-# Servir a pasta dist/
-```
+- `npm run dev` - Servidor de desenvolvimento
+- `npm run build` - Build de produção
+- `npm run preview` - Visualiza o build
+- `npm run lint` - Linter
 
-## 📞 Suporte
+### Backend
+- `npm run dev` - Servidor de desenvolvimento (hot reload)
+- `npm start` - Servidor de produção
+- `npm run db:generate` - Gera cliente Prisma
+- `npm run db:push` - Sincroniza schema com banco
+- `npm run db:seed` - Popula banco com dados iniciais
+- `npm run db:studio` - Abre Prisma Studio
+- `npm test` - Roda testes automatizados
 
-Se encontrar problemas:
+## 🔐 Autenticação
 
-1. Verifique os logs no console
-2. Verifique se todas as dependências estão instaladas
-3. Verifique se as portas 3000 e 3333 estão livres
-4. Consulte a documentação do README.md
+O sistema usa **JWT** para autenticação. Tokens HTTPOnly são enviados como cookies com `sameSite: lax`.
+
+### Rotas protegidas
+- Rotas com `preHandler: [fastify.authenticate]` exigem usuário logado
+- Rotas com `preHandler: [fastify.adminAuth]` exigem role ADMIN
+- O middleware tenta ler o token do cookie caso não haja header `Authorization`
+
+## 📱 Responsividade
+
+O sistema é totalmente responsivo e funciona em:
+- Desktop (1024px+)
+- Tablet (768px - 1023px)
+- Mobile (até 767px)
 
 ---
 
-**Boa sorte! 🎉** 
+Para instruções de configuração e como rodar o projeto localmente, veja o [README.md](README.md).
+
+Desenvolvido com ❤️ para o Isa Nails Design

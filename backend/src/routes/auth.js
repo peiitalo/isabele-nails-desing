@@ -69,7 +69,7 @@ export default async function authRoutes(fastify, options) {
           password: {
             type: 'string',
             minLength: 8,
-            pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-={}:;<>.,?]).{8,}$'
+            pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\\-={}:;<>.,?]).{8,}$'
           }
         }
       }

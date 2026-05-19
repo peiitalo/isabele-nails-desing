@@ -175,24 +175,19 @@ export default async function serviceRoutes(fastify, options) {
         }
       })
 
-      const totalRevenue = await prisma.booking.aggregate({
-        _sum: {
-          service: {
-            select: {
-              price: true
-            }
-          }
-        },
-        where: {
-          status: 'COMPLETED'
-        }
+      const completedBookings = await prisma.booking.findMany({
+        where: { status: 'COMPLETED' },
+        include: { service: { select: { price: true } } }
       })
+      const totalRevenue = completedBookings.reduce(
+        (sum, b) => sum + (b.service?.price || 0), 0
+      )
 
       reply.send({
         totalServices,
         activeServices,
         servicesByCategory,
-        totalRevenue: totalRevenue._sum.service?.price || 0
+        totalRevenue
       })
     } catch (error) {
       reply.status(500).send({
