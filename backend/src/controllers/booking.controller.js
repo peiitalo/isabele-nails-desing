@@ -102,8 +102,13 @@ export async function updatePayment(request, reply) {
 
 export async function getAvailability(request, reply) {
   try {
-    const { date } = request.params
-    const { serviceId } = request.query || {}
+    const date = request.params?.date || request.query?.date
+    const serviceId = request.query?.serviceId || request.params?.serviceId
+
+    if (!date) {
+      return reply.status(400).send({ error: 'Data não informada' })
+    }
+
     const slots = await bookingsService.getAvailability(date, serviceId)
     return reply.send(slots)
   } catch (error) {
@@ -113,6 +118,8 @@ export async function getAvailability(request, reply) {
     return reply.status(500).send({ error: 'Erro interno do servidor' })
   }
 }
+
+export const getAvailableSlots = getAvailability
 
 export async function getDashboardStats(request, reply) {
   try {

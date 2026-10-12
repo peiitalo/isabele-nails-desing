@@ -128,6 +128,8 @@ export async function getBookingById(id, user) {
  * @throws {AppError} 400 if service inactive or slot taken
  */
 export async function createBooking(user, { serviceId, date, time, notes, status: requestedStatus }) {
+  const cleanDate = normalizeDate(date) || date
+
   const service = await serviceModel.findServiceById(serviceId)
 
   if (!service) {
@@ -139,7 +141,7 @@ export async function createBooking(user, { serviceId, date, time, notes, status
   }
 
   const existingBooking = await bookingModel.findFirstBooking({
-    date,
+    date: cleanDate,
     time,
     status: { in: ['PENDING', 'CONFIRMED'] }
   })
@@ -152,7 +154,7 @@ export async function createBooking(user, { serviceId, date, time, notes, status
   const status = requestedStatus || (user.role === 'ADMIN' ? 'CONFIRMED' : 'PENDING')
 
   const booking = await bookingModel.createBooking({
-    data: { clientId: user.id, serviceId, date, time, notes, status, createdBy },
+    data: { clientId: user.id, serviceId, date: cleanDate, time, notes, status, createdBy },
     include: {
       client: { select: BOOKING_CLIENT_SELECT },
       service: { select: BOOKING_SERVICE_SELECT }
@@ -268,14 +270,66 @@ export async function updateBookingPayment(id, { paymentStatus, paymentMethod })
 }
 
 /**
+ * Normalize an input date into strict YYYY-MM-DD string.
+ *
+ * @param {string|Date} dateInput
+ * @returns {string|null}
+ */
+export function normalizeDate(dateInput) {
+  if (!dateInput) return null
+  let str = String(dateInput).trim()
+  try {
+    str = decodeURIComponent(str)
+  } catch {}
+
+  const match = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/)
+  if (match) {
+    const y = match[1]
+    const m = match[2].padStart(2, '0')
+    const d = match[3].padStart(2, '0')
+    return `${y}-${m}-${d}`
+  }
+
+  const parsed = new Date(str)
+  if (!isNaN(parsed.getTime())) {
+    const y = parsed.getUTCFullYear()
+    const m = String(parsed.getUTCMonth() + 1).padStart(2, '0')
+    const d = String(parsed.getUTCDate()).padStart(2, '0')
+    return `${y}-${m}-${d}`
+  }
+
+  return null
+}
+
+/**
+ * Return Sunday=0, Monday=1, ..., Saturday=6 in UTC for a YYYY-MM-DD date.
+ * Avoids any local timezone offsets shifting the day of the week.
+ *
+ * @param {string} dateStr
+ * @returns {number|null}
+ */
+export function getWeekdayFromDate(dateStr) {
+  const normalized = normalizeDate(dateStr)
+  if (!normalized) return null
+  const [year, month, day] = normalized.split('-').map(Number)
+  const utcDate = new Date(Date.UTC(year, month - 1, day))
+  return utcDate.getUTCDay()
+}
+
+/**
  * Return available and unavailable 30-minute time slots for a given date.
  * Prioritises SpecialDay overrides over recurring WorkingHour configuration.
  *
- * @param {string} date      - YYYY-MM-DD
+ * @param {string} date      - YYYY-MM-DD or ISO string
  * @param {string} [serviceId]
  * @returns {Promise<{time: string, available: boolean}[]>}
  */
 export async function getAvailability(date, serviceId) {
+  const cleanDate = normalizeDate(date)
+  if (!cleanDate) {
+    return []
+  }
+
   let serviceDuration = 0
 
   if (serviceId) {
@@ -285,7 +339,7 @@ export async function getAvailability(date, serviceId) {
 
   // 1. Check for a special-day override first
   const specialDays = await bookingModel.findManySpecialDays({
-    where: { date },
+    where: { date: cleanDate },
     orderBy: [{ startTime: 'asc' }]
   })
 
@@ -294,16 +348,19 @@ export async function getAvailability(date, serviceId) {
   if (specialDays.length > 0) {
     workingHours = specialDays.map(s => ({ startTime: s.startTime, endTime: s.endTime }))
   } else {
-    const weekday = new Date(date + 'T00:00:00').getDay()
-    workingHours = await bookingModel.findManyWorkingHours({
-      where: { weekday },
-      orderBy: [{ startTime: 'asc' }]
-    })
+    const weekday = getWeekdayFromDate(cleanDate)
+    if (weekday !== null && !isNaN(weekday)) {
+      workingHours = await bookingModel.findManyWorkingHours({
+        where: { weekday },
+        orderBy: [{ startTime: 'asc' }]
+      })
+    }
   }
 
   // 2. Generate all 30-minute slots within working hours
   const timeSlots = []
   for (const wh of workingHours) {
+    if (!wh.startTime || !wh.endTime) continue
     let [h, m] = wh.startTime.split(':').map(Number)
     const [endH, endM] = wh.endTime.split(':').map(Number)
 
@@ -314,9 +371,11 @@ export async function getAvailability(date, serviceId) {
     }
   }
 
+  const uniqueSlots = Array.from(new Set(timeSlots)).sort()
+
   // 3. Find active bookings for this date and mark occupied intervals
   const bookings = await bookingModel.findManyBookings({
-    where: { date, status: { in: ['PENDING', 'CONFIRMED'] } },
+    where: { date: cleanDate, status: { in: ['PENDING', 'CONFIRMED'] } },
     include: { service: { select: { duration: true } } }
   })
 
@@ -324,7 +383,7 @@ export async function getAvailability(date, serviceId) {
   for (const b of bookings) {
     const duration = b.service?.duration || 0
     let [h, m] = b.time.split(':').map(Number)
-    const steps = Math.ceil(duration / 30)
+    const steps = Math.max(1, Math.ceil(duration / 30))
 
     for (let i = 0; i < steps; i++) {
       occupiedTimes.add(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`)
@@ -334,7 +393,7 @@ export async function getAvailability(date, serviceId) {
   }
 
   // 4. Build availability response
-  return timeSlots.map(time => {
+  return uniqueSlots.map(time => {
     if (!serviceId || !serviceDuration) {
       return { time, available: !occupiedTimes.has(time) }
     }
@@ -344,7 +403,7 @@ export async function getAvailability(date, serviceId) {
 
     for (let i = 0; i < Math.ceil(serviceDuration / 30); i++) {
       const t = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
-      if (!timeSlots.includes(t) || occupiedTimes.has(t)) {
+      if (!uniqueSlots.includes(t) || occupiedTimes.has(t)) {
         canBook = false
         break
       }
@@ -355,6 +414,9 @@ export async function getAvailability(date, serviceId) {
     return { time, available: canBook }
   })
 }
+
+export const getAvailableSlots = getAvailability
+
 
 /**
  * Aggregate booking statistics for the admin dashboard.

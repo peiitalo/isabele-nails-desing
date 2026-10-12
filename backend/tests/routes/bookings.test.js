@@ -172,6 +172,61 @@ describe('GET /api/bookings/availability/:date', () => {
     expect(res.statusCode).toBe(200)
     expect(res.json().length).toBe(0)
   })
+
+  it('deve aceitar parametro date via query string (/availability?date=...)', async () => {
+    await prisma.workingHour.create({
+      data: { weekday: 1, startTime: '09:00', endTime: '11:00' }
+    })
+
+    const res = await fastify.inject({
+      method: 'GET',
+      url: '/api/bookings/availability?date=2026-04-06'
+    })
+
+    expect(res.statusCode).toBe(200)
+    const slots = res.json()
+    expect(slots.length).toBe(4)
+    expect(slots[0].time).toBe('09:00')
+  })
+
+  it('deve aceitar data no formato ISO completo com timezone', async () => {
+    await prisma.workingHour.create({
+      data: { weekday: 1, startTime: '09:00', endTime: '11:00' }
+    })
+
+    const res = await fastify.inject({
+      method: 'GET',
+      url: '/api/bookings/availability?date=2026-04-06T00:00:00.000Z'
+    })
+
+    expect(res.statusCode).toBe(200)
+    const slots = res.json()
+    expect(slots.length).toBe(4)
+  })
+
+  it('deve retornar 400 se data nao for enviada no endpoint sem path param', async () => {
+    const res = await fastify.inject({
+      method: 'GET',
+      url: '/api/bookings/availability'
+    })
+
+    expect(res.statusCode).toBe(400)
+    expect(res.json().error).toBe('Data não informada')
+  })
+
+  it('deve suportar o alias /available-slots?date=...', async () => {
+    await prisma.workingHour.create({
+      data: { weekday: 1, startTime: '10:00', endTime: '12:00' }
+    })
+
+    const res = await fastify.inject({
+      method: 'GET',
+      url: '/api/bookings/available-slots?date=2026-04-06'
+    })
+
+    expect(res.statusCode).toBe(200)
+    expect(res.json().length).toBe(4)
+  })
 })
 
 // ===================== POST /api/bookings/ =====================

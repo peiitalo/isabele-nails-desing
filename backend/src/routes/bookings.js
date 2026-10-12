@@ -6,8 +6,11 @@ export default async function bookingRoutes(fastify, options) {
     preHandler: [fastify.authenticate]
   }, bookingController.listBookings)
 
-  // Ajustar endpoint de horários disponíveis para priorizar dias especiais
+  // Endpoint de horários disponíveis (suporta query params ?date= e path param /:date)
+  fastify.get('/availability', bookingController.getAvailability)
   fastify.get('/availability/:date', bookingController.getAvailability)
+  fastify.get('/available-slots', bookingController.getAvailability)
+  fastify.get('/available-slots/:date', bookingController.getAvailability)
 
   // Estatísticas dos agendamentos (apenas admin)
   fastify.get('/stats/dashboard', {

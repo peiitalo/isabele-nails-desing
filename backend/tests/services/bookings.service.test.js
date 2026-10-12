@@ -213,4 +213,96 @@ describe('Bookings Service (Unit Tests with Mocked Models)', () => {
       expect(bookingModel.deleteSpecialDay).toHaveBeenCalledWith('sd-1')
     })
   })
+
+  describe('getAvailability & Date Parsing', () => {
+    it('deve extrair o dia da semana correto independente do fuso horário local', () => {
+      // 2026-04-05 é Domingo (0)
+      expect(bookingsService.getWeekdayFromDate('2026-04-05')).toBe(0)
+      // 2026-04-06 é Segunda-feira (1)
+      expect(bookingsService.getWeekdayFromDate('2026-04-06')).toBe(1)
+      // Com sufixo ISO / horário
+      expect(bookingsService.getWeekdayFromDate('2026-04-06T00:00:00.000Z')).toBe(1)
+    })
+
+    it('deve retornar lista vazia para data inválida', async () => {
+      const slots = await bookingsService.getAvailability('')
+      expect(slots).toEqual([])
+    })
+
+    it('deve gerar slots com base no horário de trabalho semanal', async () => {
+      vi.mocked(bookingModel.findManySpecialDays).mockResolvedValue([])
+      vi.mocked(bookingModel.findManyWorkingHours).mockResolvedValue([
+        { weekday: 1, startTime: '09:00', endTime: '11:00' }
+      ])
+      vi.mocked(bookingModel.findManyBookings).mockResolvedValue([])
+
+      const slots = await bookingsService.getAvailability('2026-04-06')
+
+      expect(bookingModel.findManySpecialDays).toHaveBeenCalledWith({
+        where: { date: '2026-04-06' },
+        orderBy: [{ startTime: 'asc' }]
+      })
+      expect(bookingModel.findManyWorkingHours).toHaveBeenCalledWith({
+        where: { weekday: 1 },
+        orderBy: [{ startTime: 'asc' }]
+      })
+      // 09:00, 09:30, 10:00, 10:30 (4 slots)
+      expect(slots.length).toBe(4)
+      expect(slots[0]).toEqual({ time: '09:00', available: true })
+      expect(slots[3]).toEqual({ time: '10:30', available: true })
+    })
+
+    it('deve priorizar dias especiais sobre o horário semanal', async () => {
+      // Especial configurado para 14:00 - 16:00
+      vi.mocked(bookingModel.findManySpecialDays).mockResolvedValue([
+        { date: '2026-04-06', startTime: '14:00', endTime: '16:00' }
+      ])
+      vi.mocked(bookingModel.findManyBookings).mockResolvedValue([])
+
+      const slots = await bookingsService.getAvailability('2026-04-06')
+
+      // Não deve buscar working hours normais
+      expect(bookingModel.findManyWorkingHours).not.toHaveBeenCalled()
+      // 14:00, 14:30, 15:00, 15:30 (4 slots)
+      expect(slots.length).toBe(4)
+      expect(slots[0].time).toBe('14:00')
+      expect(slots[3].time).toBe('15:30')
+    })
+
+    it('deve subtrair agendamentos existentes (PENDING ou CONFIRMED)', async () => {
+      vi.mocked(bookingModel.findManySpecialDays).mockResolvedValue([])
+      vi.mocked(bookingModel.findManyWorkingHours).mockResolvedValue([
+        { weekday: 1, startTime: '09:00', endTime: '11:00' }
+      ])
+      vi.mocked(bookingModel.findManyBookings).mockResolvedValue([
+        { time: '09:30', service: { duration: 30 } }
+      ])
+
+      const slots = await bookingsService.getAvailability('2026-04-06')
+
+      expect(slots.find(s => s.time === '09:00').available).toBe(true)
+      expect(slots.find(s => s.time === '09:30').available).toBe(false)
+      expect(slots.find(s => s.time === '10:00').available).toBe(true)
+    })
+
+    it('deve considerar duração do serviço para bloquear slots que ultrapassam o expediente', async () => {
+      vi.mocked(bookingModel.findManySpecialDays).mockResolvedValue([])
+      vi.mocked(bookingModel.findManyWorkingHours).mockResolvedValue([
+        { weekday: 1, startTime: '09:00', endTime: '11:00' }
+      ])
+      vi.mocked(serviceModel.findServiceById).mockResolvedValue({ id: 's1', duration: 60 })
+      vi.mocked(bookingModel.findManyBookings).mockResolvedValue([])
+
+      const slots = await bookingsService.getAvailability('2026-04-06', 's1')
+
+      // 09:00 (ocupa 09:00 e 09:30) -> livre
+      expect(slots.find(s => s.time === '09:00').available).toBe(true)
+      // 09:30 (ocupa 09:30 e 10:00) -> livre
+      expect(slots.find(s => s.time === '09:30').available).toBe(true)
+      // 10:00 (ocupa 10:00 e 10:30) -> livre
+      expect(slots.find(s => s.time === '10:00').available).toBe(true)
+      // 10:30 (precisaria de 10:30 e 11:00, mas fecha às 11:00) -> indisponível
+      expect(slots.find(s => s.time === '10:30').available).toBe(false)
+    })
+  })
 })

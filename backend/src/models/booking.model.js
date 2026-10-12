@@ -66,8 +66,12 @@ export async function findBookingsByClientId(clientId) {
 // ---------------------------------------------------------------------------
 
 export async function findManyWorkingHours({ where = {}, orderBy = [{ weekday: 'asc' }, { startTime: 'asc' }] } = {}) {
+  const normalizedWhere = { ...where }
+  if (normalizedWhere.weekday !== undefined && typeof normalizedWhere.weekday !== 'number') {
+    normalizedWhere.weekday = Number(normalizedWhere.weekday)
+  }
   return prisma.workingHour.findMany({
-    where,
+    where: normalizedWhere,
     orderBy
   })
 }
@@ -79,15 +83,23 @@ export async function findWorkingHourById(id) {
 }
 
 export async function createWorkingHour(data) {
+  const payload = {
+    ...data,
+    ...(data.weekday !== undefined ? { weekday: Number(data.weekday) } : {})
+  }
   return prisma.workingHour.create({
-    data
+    data: payload
   })
 }
 
 export async function updateWorkingHour(id, data) {
+  const payload = {
+    ...data,
+    ...(data.weekday !== undefined ? { weekday: Number(data.weekday) } : {})
+  }
   return prisma.workingHour.update({
     where: { id },
-    data
+    data: payload
   })
 }
 
@@ -101,9 +113,22 @@ export async function deleteWorkingHour(id) {
 // Special Days
 // ---------------------------------------------------------------------------
 
+function sanitizeSpecialDayDate(date) {
+  if (!date) return date
+  const match = String(date).match(/^(\d{4})-(\d{1,2})-(\d{1,2})/)
+  if (match) {
+    return `${match[1]}-${match[2].padStart(2, '0')}-${match[3].padStart(2, '0')}`
+  }
+  return String(date).split('T')[0]
+}
+
 export async function findManySpecialDays({ where = {}, orderBy = [{ date: 'asc' }, { startTime: 'asc' }] } = {}) {
+  const normalizedWhere = { ...where }
+  if (normalizedWhere.date) {
+    normalizedWhere.date = sanitizeSpecialDayDate(normalizedWhere.date)
+  }
   return prisma.specialDay.findMany({
-    where,
+    where: normalizedWhere,
     orderBy
   })
 }
@@ -115,15 +140,23 @@ export async function findSpecialDayById(id) {
 }
 
 export async function createSpecialDay(data) {
+  const payload = {
+    ...data,
+    ...(data.date ? { date: sanitizeSpecialDayDate(data.date) } : {})
+  }
   return prisma.specialDay.create({
-    data
+    data: payload
   })
 }
 
 export async function updateSpecialDay(id, data) {
+  const payload = {
+    ...data,
+    ...(data.date ? { date: sanitizeSpecialDayDate(data.date) } : {})
+  }
   return prisma.specialDay.update({
     where: { id },
-    data
+    data: payload
   })
 }
 
