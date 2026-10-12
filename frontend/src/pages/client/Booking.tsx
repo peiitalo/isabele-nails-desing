@@ -5,7 +5,9 @@ import { Service, TimeSlot } from '../../types'
 import { Calendar, Clock, User, MessageSquare } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useLocation } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion'
+import { format, addDays, startOfDay } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 
 export default function Booking() {
   const { user } = useAuth()
@@ -16,7 +18,7 @@ export default function Booking() {
   const [notes, setNotes] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
+  const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([])
   const location = useLocation()
 
   // Buscar serviços reais
@@ -26,7 +28,6 @@ export default function Booking() {
       try {
         const data = await apiService.getServices()
         setServices(data)
-        // Se veio serviceId via state, já seleciona
         if (location.state && location.state.serviceId) {
           setSelectedService(location.state.serviceId)
         }
@@ -39,19 +40,23 @@ export default function Booking() {
     fetchServices()
   }, [])
 
-  // Gerar datas para os próximos 30 dias
+  // Gerar datas locais sem contaminação de UTC
   const generateDates = () => {
     const dates = []
-    const today = new Date()
+    const today = startOfDay(new Date())
     for (let i = 0; i < 30; i++) {
-      const date = new Date(today)
-      date.setDate(today.getDate() + i)
-      dates.push(date.toISOString().split('T')[0])
+      const date = addDays(today, i)
+      // Formata explicitamente em YYYY-MM-DD usando o fuso local
+      dates.push({
+        formatted: format(date, 'yyyy-MM-dd'),
+        dateObj: date
+      })
     }
     return dates
   }
 
   const availableDates = generateDates()
+  const todayStr = format(startOfDay(new Date()), 'yyyy-MM-dd')
 
   // Buscar horários disponíveis reais do backend
   useEffect(() => {
@@ -155,25 +160,24 @@ export default function Booking() {
             <h2 className="text-xl font-semibold">Escolha a Data</h2>
           </div>
           <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
-            {availableDates.slice(0, 10).map((date) => {
-              const dateObj = new Date(date)
-              const isToday = date === new Date().toISOString().split('T')[0]
-              const isSelected = selectedDate === date
+            {availableDates.slice(0, 10).map(({ formatted, dateObj }) => {
+              const isToday = formatted === todayStr
+              const isSelected = selectedDate === formatted
               return (
                 <motion.button
-                  key={date}
+                  key={formatted}
                   type="button"
                   className={`p-3 text-center rounded-lg border transition-colors ${isSelected ? 'border-primary-500 bg-primary-50 text-primary-700 scale-105 shadow' : 'border-gray-200 hover:border-gray-300'} ${isToday ? 'bg-yellow-50 border-yellow-300' : ''}`}
-                  onClick={() => setSelectedDate(date)}
+                  onClick={() => setSelectedDate(formatted)}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.97 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                 >
                   <div className="text-xs font-medium">
-                    {dateObj.toLocaleDateString('pt-BR', { weekday: 'short' })}
+                    {format(dateObj, 'EEE', { locale: ptBR })}
                   </div>
                   <div className="text-lg font-bold">
-                    {dateObj.getDate()}
+                    {format(dateObj, 'd')}
                   </div>
                   {isToday && (
                     <div className="text-xs text-yellow-600">Hoje</div>
@@ -250,7 +254,8 @@ export default function Booking() {
                 <div className="flex justify-between">
                   <span className="text-gray-600">Data:</span>
                   <span className="font-medium">
-                    {new Date(selectedDate).toLocaleDateString('pt-BR')}
+                    {/* Exibe a data no formato BR sem sofrer parse de UTC */}
+                    {selectedDate.split('-').reverse().join('/')}
                   </span>
                 </div>
               )}
@@ -277,4 +282,4 @@ export default function Booking() {
       </form>
     </motion.div>
   );
-} 
+}
