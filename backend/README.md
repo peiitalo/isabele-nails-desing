@@ -1,22 +1,32 @@
-# Isa Nails Design - Backend
+# Isa Nails Design - Backend API
 
-Backend completo para o sistema Isa Nails Design, construído com Fastify, Prisma e SQLite.
+Backend completo para o sistema Isa Nails Design, construído com **Fastify 5**, **Prisma ORM 5** e **SQLite**, seguindo uma arquitetura limpa em camadas:
+
+$$\text{Routes} \longrightarrow \text{Controllers} \longrightarrow \text{Services} \longrightarrow \text{Models/Repositories} \longrightarrow \text{Prisma ORM}$$
+
+---
 
 ## 🚀 Tecnologias
 
-- **Fastify** - Framework web rápido e eficiente
-- **Prisma** - ORM moderno para Node.js
-- **SQLite** - Banco de dados leve e rápido
-- **JWT** - Autenticação baseada em tokens
-- **bcryptjs** - Criptografia de senhas
-- **CORS** - Cross-Origin Resource Sharing
+- **Node.js (ES Modules)** - Runtime JavaScript moderno
+- **Fastify 5** - Framework web rápido e eficiente
+- **Prisma ORM 5** - Modelagem e manipulação do banco de dados
+- **SQLite** - Banco de dados relacional leve e autocontido
+- **@fastify/jwt** & **@fastify/cookie** - Autenticação segura via cookies HTTPOnly
+- **@fastify/cors** - Gerenciamento de CORS
+- **bcryptjs** - Criptografia e hashing de senhas
+- **Vitest 4** - Testes automatizados (150 testes passando)
+
+---
 
 ## 📋 Pré-requisitos
 
-- Node.js 18+ 
-- npm ou yarn
+- Node.js 18+
+- npm 9+
 
-## 🛠️ Instalação
+---
+
+## 🛠️ Instalação e Execução
 
 1. **Instalar dependências:**
 ```bash
@@ -28,7 +38,7 @@ npm install
 # Gerar cliente Prisma
 npm run db:generate
 
-# Criar tabelas no banco
+# Sincronizar schema com o banco SQLite
 npm run db:push
 
 # Popular banco com dados iniciais
@@ -37,145 +47,93 @@ npm run db:seed
 
 3. **Iniciar servidor:**
 ```bash
-# Desenvolvimento (com hot reload)
+# Modo desenvolvimento (com hot reload)
 npm run dev
 
-# Produção
+# Modo produção
 npm start
 ```
 
-O servidor estará rodando em `http://localhost:3333`
+O servidor iniciará em `http://localhost:3333`.  
+Endpoint de verificação: `http://localhost:3333/health`
 
-## 📊 Banco de Dados
+---
 
-### Estrutura
+## 🧪 Testes Automatizados
 
-- **Users** - Usuários (admin e clientes)
-- **Services** - Serviços oferecidos
-- **Bookings** - Agendamentos
-
-### Dados Iniciais
-
-O seed cria automaticamente:
-
-- **Admin:** admin@isa.com / admin123
-- **Cliente:** cliente@teste.com / cliente123
-- **6 serviços** de exemplo
-- **2 agendamentos** de exemplo
-
-## 🔌 Endpoints da API
-
-### Autenticação
-- `POST /api/auth/login` - Login
-- `POST /api/auth/register` - Registro
-- `GET /api/auth/me` - Dados do usuário atual
-
-### Serviços
-- `GET /api/services` - Listar serviços
-- `GET /api/services/:id` - Buscar serviço
-- `POST /api/services` - Criar serviço (admin)
-- `PUT /api/services/:id` - Atualizar serviço (admin)
-- `DELETE /api/services/:id` - Deletar serviço (admin)
-
-### Agendamentos
-- `GET /api/bookings` - Listar agendamentos
-- `GET /api/bookings/:id` - Buscar agendamento
-- `POST /api/bookings` - Criar agendamento
-- `PATCH /api/bookings/:id/status` - Atualizar status (admin)
-- `DELETE /api/bookings/:id` - Cancelar agendamento
-- `GET /api/bookings/availability/:date` - Horários disponíveis
-
-### Usuários
-- `GET /api/users` - Listar usuários (admin)
-- `GET /api/users/:id` - Buscar usuário
-- `PUT /api/users/:id` - Atualizar usuário
-- `PATCH /api/users/:id/password` - Alterar senha
-- `DELETE /api/users/:id` - Deletar usuário (admin)
-
-### Estatísticas
-- `GET /api/bookings/stats/dashboard` - Stats de agendamentos
-- `GET /api/services/stats/overview` - Stats de serviços
-- `GET /api/users/stats/overview` - Stats de usuários
-
-## 🔐 Autenticação
-
-A API usa JWT para autenticação. Inclua o token no header:
-
-```
-Authorization: Bearer <seu-token>
-```
-
-## 🛡️ Permissões
-
-- **ADMIN:** Acesso total a todas as funcionalidades
-- **CLIENT:** Acesso limitado aos próprios dados e agendamentos
-
-## 📝 Variáveis de Ambiente
-
-Crie um arquivo `.env` na raiz do backend:
-
-```env
-JWT_SECRET=sua-chave-secreta-aqui
-PORT=3333
-HOST=0.0.0.0
-```
-
-## 🗄️ Comandos do Prisma
+Para rodar todos os testes (150 testes passando):
 
 ```bash
-# Gerar cliente Prisma
-npm run db:generate
-
-# Sincronizar schema com banco
-npm run db:push
-
-# Criar migração
-npm run db:migrate
-
-# Abrir Prisma Studio
-npm run db:studio
-
-# Executar seed
-npm run db:seed
+npm test
 ```
 
-## 🔧 Desenvolvimento
+A suíte inclui:
+- **`tests/services/`**: Testes unitários isolados com mocks da camada de modelos.
+- **`tests/routes/`**: Testes de integração de endpoints validando cookies, JWT, rotas e banco real de teste.
 
-### Estrutura de Pastas
+---
+
+## 📊 Banco de Dados & Credenciais
+
+### Tabelas
+- **users**: Contas de usuários (`ADMIN` e `CLIENT`)
+- **services**: Serviços oferecidos (nome, preço, duração, categoria, status)
+- **bookings**: Agendamentos com status, data, horário e pagamento
+- **working_hours**: Grade semanal de horários de trabalho
+- **special_days**: Exceções e feriados com horários específicos
+
+### Credenciais Iniciais de Demonstração
+- **Admin:** `admin@isa.com` / `admin123`
+- **Cliente:** `cliente@teste.com` / `cliente123`
+
+---
+
+## 📁 Estrutura do Backend
 
 ```
 backend/
 ├── prisma/
-│   ├── schema.prisma
-│   └── dev.db
+│   ├── schema.prisma       # Definição das tabelas e relacionamentos
+│   └── dev.db              # Banco SQLite local
 ├── src/
-│   ├── database/
+│   ├── controllers/        # Controladores HTTP (req, res, JWT, cookies)
+│   │   ├── auth.controller.js
+│   │   ├── booking.controller.js
+│   │   ├── service.controller.js
+│   │   └── user.controller.js
+│   ├── database/           # Cliente Prisma singleton e script seed
 │   │   ├── client.js
 │   │   └── seed.js
-│   ├── middleware/
+│   ├── errors/             # Classe de erro de domínio
+│   │   └── AppError.js
+│   ├── middleware/         # Middlewares de autenticação (JWT) e autorização (Admin)
 │   │   └── auth.js
-│   ├── routes/
+│   ├── models/             # Camada de Repositório / Queries brutas no Prisma
+│   │   ├── auth.model.js
+│   │   ├── booking.model.js
+│   │   ├── service.model.js
+│   │   └── user.model.js
+│   ├── routes/             # Definição de endpoints, métodos e schemas Fastify
 │   │   ├── auth.js
-│   │   ├── services.js
 │   │   ├── bookings.js
+│   │   ├── services.js
 │   │   └── users.js
-│   └── server.js
+│   ├── services/           # Regras de negócio puras e cálculos de domínio
+│   │   ├── auth.service.js
+│   │   ├── bookings.service.js
+│   │   ├── services.service.js
+│   │   └── users.service.js
+│   └── server.js           # Ponto de entrada e configuração do Fastify
+├── tests/                  # Suíte de testes automatizados Vitest
+│   ├── helpers/            # Setup do Fastify e helpers de banco de dados
+│   ├── routes/             # Testes de integração de rotas
+│   └── services/           # Testes unitários com modelos mockados
 ├── package.json
-└── README.md
+└── vitest.config.js
 ```
 
-### Logs
+---
 
-O servidor usa o logger do Fastify. Em desenvolvimento, todos os logs são exibidos no console.
+## 🔌 Endpoints da API
 
-## 🚀 Deploy
-
-Para produção, configure as variáveis de ambiente adequadas e use:
-
-```bash
-npm start
-```
-
-## 📞 Suporte
-
-Para dúvidas ou problemas, consulte a documentação ou entre em contato com a equipe de desenvolvimento. 
+Consulte o [**README.md principal da raiz**](../README.md) e o [**SETUP.md**](../SETUP.md) para a lista completa e detalhada de endpoints e instruções de configuração.
