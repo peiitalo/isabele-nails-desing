@@ -1,56 +1,16 @@
-import prisma from '../database/client.js'
+import * as serviceController from '../controllers/service.controller.js'
 
 export default async function serviceRoutes(fastify, options) {
   // Listar todos os serviços
-  fastify.get('/', async (request, reply) => {
-    try {
-      const { category, isActive } = request.query
-      
-      const where = {}
-      
-      if (category) {
-        where.category = category
-      }
-      
-      if (isActive !== undefined) {
-        where.isActive = isActive === 'true'
-      }
+  fastify.get('/', serviceController.listServices)
 
-      const services = await prisma.service.findMany({
-        where,
-        orderBy: { name: 'asc' }
-      })
-
-      reply.send(services)
-    } catch (error) {
-      reply.status(500).send({
-        error: 'Erro interno do servidor'
-      })
-    }
-  })
+  // Obter estatísticas dos serviços (apenas admin)
+  fastify.get('/stats/overview', {
+    preHandler: [fastify.adminAuth]
+  }, serviceController.getStats)
 
   // Buscar serviço por ID
-  fastify.get('/:id', async (request, reply) => {
-    try {
-      const { id } = request.params
-
-      const service = await prisma.service.findUnique({
-        where: { id }
-      })
-
-      if (!service) {
-        return reply.status(404).send({
-          error: 'Serviço não encontrado'
-        })
-      }
-
-      reply.send(service)
-    } catch (error) {
-      reply.status(500).send({
-        error: 'Erro interno do servidor'
-      })
-    }
-  })
+  fastify.get('/:id', serviceController.getServiceById)
 
   // Criar novo serviço (apenas admin)
   fastify.post('/', {
@@ -64,29 +24,15 @@ export default async function serviceRoutes(fastify, options) {
           description: { type: 'string', minLength: 1 },
           price: { type: 'number', minimum: 0 },
           duration: { type: 'integer', minimum: 1 },
-          category: { 
-            type: 'string', 
-            enum: ['MANICURE', 'PEDICURE', 'ESMALTACAO', 'DECORACAO'] 
+          category: {
+            type: 'string',
+            enum: ['MANICURE', 'PEDICURE', 'ESMALTACAO', 'DECORACAO']
           },
           isActive: { type: 'boolean' }
         }
       }
     }
-  }, async (request, reply) => {
-    try {
-      const serviceData = request.body
-
-      const service = await prisma.service.create({
-        data: serviceData
-      })
-
-      reply.status(201).send(service)
-    } catch (error) {
-      reply.status(500).send({
-        error: 'Erro interno do servidor'
-      })
-    }
-  })
+  }, serviceController.createService)
 
   // Atualizar serviço (apenas admin)
   fastify.put('/:id', {
@@ -99,100 +45,18 @@ export default async function serviceRoutes(fastify, options) {
           description: { type: 'string', minLength: 1 },
           price: { type: 'number', minimum: 0 },
           duration: { type: 'integer', minimum: 1 },
-          category: { 
-            type: 'string', 
-            enum: ['MANICURE', 'PEDICURE', 'ESMALTACAO', 'DECORACAO'] 
+          category: {
+            type: 'string',
+            enum: ['MANICURE', 'PEDICURE', 'ESMALTACAO', 'DECORACAO']
           },
           isActive: { type: 'boolean' }
         }
       }
     }
-  }, async (request, reply) => {
-    try {
-      const { id } = request.params
-      const updateData = request.body
-
-      const service = await prisma.service.update({
-        where: { id },
-        data: updateData
-      })
-
-      reply.send(service)
-    } catch (error) {
-      if (error.code === 'P2025') {
-        return reply.status(404).send({
-          error: 'Serviço não encontrado'
-        })
-      }
-      
-      reply.status(500).send({
-        error: 'Erro interno do servidor'
-      })
-    }
-  })
+  }, serviceController.updateService)
 
   // Deletar serviço (apenas admin)
   fastify.delete('/:id', {
     preHandler: [fastify.adminAuth]
-  }, async (request, reply) => {
-    try {
-      const { id } = request.params
-
-      // Permite deletar serviço mesmo que possua agendamentos
-
-      await prisma.service.delete({
-        where: { id }
-      })
-
-      reply.status(204).send()
-    } catch (error) {
-      if (error.code === 'P2025') {
-        return reply.status(404).send({
-          error: 'Serviço não encontrado'
-        })
-      }
-      
-      reply.status(500).send({
-        error: 'Erro interno do servidor'
-      })
-    }
-  })
-
-  // Obter estatísticas dos serviços (apenas admin)
-  fastify.get('/stats/overview', {
-    preHandler: [fastify.adminAuth]
-  }, async (request, reply) => {
-    try {
-      const totalServices = await prisma.service.count()
-      const activeServices = await prisma.service.count({
-        where: { isActive: true }
-      })
-
-      const servicesByCategory = await prisma.service.groupBy({
-        by: ['category'],
-        _count: {
-          category: true
-        }
-      })
-
-      const completedBookings = await prisma.booking.findMany({
-        where: { status: 'COMPLETED' },
-        include: { service: { select: { price: true } } }
-      })
-      const totalRevenue = completedBookings.reduce(
-        (sum, b) => sum + (b.service?.price || 0), 0
-      )
-
-      reply.send({
-        totalServices,
-        activeServices,
-        servicesByCategory,
-        totalRevenue
-      })
-    } catch (error) {
-      reply.status(500).send({
-        error: 'Erro interno do servidor'
-      })
-    }
-  })
-} 
+  }, serviceController.deleteService)
+}

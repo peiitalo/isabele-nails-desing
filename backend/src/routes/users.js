@@ -1,112 +1,20 @@
-import prisma from '../database/client.js'
-import bcrypt from 'bcryptjs'
+import * as userController from '../controllers/user.controller.js'
 
 export default async function userRoutes(fastify, options) {
   // Listar usuários (apenas admin)
   fastify.get('/', {
     preHandler: [fastify.adminAuth]
-  }, async (request, reply) => {
-    try {
-      const { role, search } = request.query
-      
-      const where = {}
-      
-      if (role) {
-        where.role = role
-      }
-      
-      if (search) {
-        where.OR = [
-          { name: { contains: search, mode: 'insensitive' } },
-          { email: { contains: search, mode: 'insensitive' } },
-          { phone: { contains: search } }
-        ]
-      }
+  }, userController.listUsers)
 
-      const users = await prisma.user.findMany({
-        where,
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          phone: true,
-          role: true,
-          createdAt: true,
-          _count: {
-            select: {
-              bookings: true
-            }
-          }
-        },
-        orderBy: { name: 'asc' }
-      })
-
-      reply.send(users)
-    } catch (error) {
-      reply.status(500).send({
-        error: 'Erro interno do servidor'
-      })
-    }
-  })
+  // Estatísticas dos usuários (apenas admin)
+  fastify.get('/stats/overview', {
+    preHandler: [fastify.adminAuth]
+  }, userController.getStats)
 
   // Buscar usuário por ID
   fastify.get('/:id', {
     preHandler: [fastify.authenticate]
-  }, async (request, reply) => {
-    try {
-      const { id } = request.params
-      const user = request.user
-
-      // Verificar permissão
-      if (user.role === 'CLIENT' && user.id !== id) {
-        return reply.status(403).send({
-          error: 'Acesso negado'
-        })
-      }
-
-      const userData = await prisma.user.findUnique({
-        where: { id },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          phone: true,
-          role: true,
-          createdAt: true,
-          bookings: {
-            select: {
-              id: true,
-              date: true,
-              time: true,
-              status: true,
-              service: {
-                select: {
-                  name: true,
-                  price: true
-                }
-              }
-            },
-            orderBy: [
-              { date: 'desc' },
-              { time: 'desc' }
-            ]
-          }
-        }
-      })
-
-      if (!userData) {
-        return reply.status(404).send({
-          error: 'Usuário não encontrado'
-        })
-      }
-
-      reply.send(userData)
-    } catch (error) {
-      reply.status(500).send({
-        error: 'Erro interno do servidor'
-      })
-    }
-  })
+  }, userController.getUserById)
 
   // Atualizar perfil do usuário
   fastify.put('/:id', {
@@ -121,61 +29,7 @@ export default async function userRoutes(fastify, options) {
         }
       }
     }
-  }, async (request, reply) => {
-    try {
-      const { id } = request.params
-      const updateData = request.body
-      const user = request.user
-
-      // Verificar permissão
-      if (user.role === 'CLIENT' && user.id !== id) {
-        return reply.status(403).send({
-          error: 'Acesso negado'
-        })
-      }
-
-      // Se estiver atualizando email, verificar se já existe
-      if (updateData.email) {
-        const existingUser = await prisma.user.findFirst({
-          where: {
-            email: updateData.email,
-            id: { not: id }
-          }
-        })
-
-        if (existingUser) {
-          return reply.status(400).send({
-            error: 'Email já está em uso'
-          })
-        }
-      }
-
-      const updatedUser = await prisma.user.update({
-        where: { id },
-        data: updateData,
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          phone: true,
-          role: true,
-          createdAt: true
-        }
-      })
-
-      reply.send(updatedUser)
-    } catch (error) {
-      if (error.code === 'P2025') {
-        return reply.status(404).send({
-          error: 'Usuário não encontrado'
-        })
-      }
-      
-      reply.status(500).send({
-        error: 'Erro interno do servidor'
-      })
-    }
-  })
+  }, userController.updateUser)
 
   // Alterar senha
   fastify.patch('/:id/password', {
@@ -190,141 +44,10 @@ export default async function userRoutes(fastify, options) {
         }
       }
     }
-  }, async (request, reply) => {
-    try {
-      const { id } = request.params
-      const { currentPassword, newPassword } = request.body
-      const user = request.user
-
-      // Verificar permissão
-      if (user.role === 'CLIENT' && user.id !== id) {
-        return reply.status(403).send({
-          error: 'Acesso negado'
-        })
-      }
-
-      // Buscar usuário com senha
-      const userData = await prisma.user.findUnique({
-        where: { id },
-        select: {
-          id: true,
-          password: true
-        }
-      })
-
-      if (!userData) {
-        return reply.status(404).send({
-          error: 'Usuário não encontrado'
-        })
-      }
-
-      // Verificar senha atual
-      const isValidPassword = await bcrypt.compare(currentPassword, userData.password)
-      if (!isValidPassword) {
-        return reply.status(400).send({
-          error: 'Senha atual incorreta'
-        })
-      }
-
-      // Criptografar nova senha
-      const hashedNewPassword = await bcrypt.hash(newPassword, 10)
-
-      // Atualizar senha
-      await prisma.user.update({
-        where: { id },
-        data: { password: hashedNewPassword }
-      })
-
-      reply.send({ message: 'Senha alterada com sucesso' })
-    } catch (error) {
-      reply.status(500).send({
-        error: 'Erro interno do servidor'
-      })
-    }
-  })
+  }, userController.changePassword)
 
   // Deletar usuário (apenas admin)
   fastify.delete('/:id', {
     preHandler: [fastify.adminAuth]
-  }, async (request, reply) => {
-    try {
-      const { id } = request.params
-
-      // Verificar se há agendamentos para este usuário
-      const bookings = await prisma.booking.findMany({
-        where: { clientId: id }
-      })
-
-      if (bookings.length > 0) {
-        return reply.status(400).send({
-          error: 'Não é possível deletar um usuário que possui agendamentos'
-        })
-      }
-
-      await prisma.user.delete({
-        where: { id }
-      })
-
-      reply.status(204).send()
-    } catch (error) {
-      if (error.code === 'P2025') {
-        return reply.status(404).send({
-          error: 'Usuário não encontrado'
-        })
-      }
-      
-      reply.status(500).send({
-        error: 'Erro interno do servidor'
-      })
-    }
-  })
-
-  // Estatísticas dos usuários (apenas admin)
-  fastify.get('/stats/overview', {
-    preHandler: [fastify.adminAuth]
-  }, async (request, reply) => {
-    try {
-      const [
-        totalUsers,
-        totalClients,
-        totalAdmins,
-        activeClients
-      ] = await Promise.all([
-        prisma.user.count(),
-        prisma.user.count({ where: { role: 'CLIENT' } }),
-        prisma.user.count({ where: { role: 'ADMIN' } }),
-        prisma.user.count({
-          where: {
-            role: 'CLIENT',
-            bookings: {
-              some: {
-                date: {
-                  gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-                }
-              }
-            }
-          }
-        }),
-      ])
-      const completedBookings = await prisma.booking.findMany({
-        where: { status: 'COMPLETED' },
-        include: { service: { select: { price: true } } }
-      })
-      const totalRevenue = completedBookings.reduce(
-        (sum, b) => sum + (b.service?.price || 0), 0
-      )
-
-      reply.send({
-        totalUsers,
-        totalClients,
-        totalAdmins,
-        activeClients,
-        totalRevenue
-      })
-    } catch (error) {
-      reply.status(500).send({
-        error: 'Erro interno do servidor'
-      })
-    }
-  })
-} 
+  }, userController.deleteUser)
+}
